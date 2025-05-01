@@ -30,6 +30,16 @@ def partial_freeze_weights(model, original_vocabsize, total_vocabsize):
         # Register the hook on the weight tensor
         param.register_hook(zero_out_gradient)
 
+    # For non-tied embedding layers, both the two embedding layers need to be hooked
+    if model.llm.lm_head.weight.data_ptr() != model.llm.model.model.embed_tokens.weight.data_ptr():
+        for param in model.llm.model.model.embed_tokens.parameters():
+            std_dev = (2.0 / param.size(1)) ** 0.5
+            param[original_vocabsize:total_vocabsize] = (
+                torch.randn((trainable_range[1] - trainable_range[0], param.size(1))) * std_dev
+            )
+            param.requires_grad = True
+            param.register_hook(zero_out_gradient)
+
 def train_embedding_layer_only(model):
     if int(os.environ.get("RANK", "0")) == 0:
         logger.info("Only training embedding layer")

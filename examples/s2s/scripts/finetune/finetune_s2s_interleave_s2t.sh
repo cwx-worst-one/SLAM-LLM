@@ -13,17 +13,18 @@ num_gpus=$(( num_gpus_per_node * num_nodes ))
 
 whisper_size=small                  # tiny base small medium large-v3
 speech_encoder_path="/valleblob/v-wenxichen/models/whisper/${whisper_size}.pt"   # different whisper size
-llm_path="/home/wenxi/mydisk/models/qwen/qwen2.5-0.5b"  # Qwen/Qwen2-0.5B, you can choose other Qwen models (Qwen2 or Qwen2.5)
-llm_name=Qwen2.5-0.5b
+llm_path="/valleblob/v-wenxichen/models/qwen/qwen2.5-7b-instruct"  # Qwen 2/2.5/3
+llm_name=qwen2.5-7b-instruct
 
 encoder_dim=768                     # 384 512 768 1024 1280
 mel_size=80                         # 80 128 ( only whisper-large-v3 supports 128 )
-llm_dim=896                         # 896 1536 2048 3584  -> 0.5B 1.5B 3B 7B
+llm_dim=3584                        # 896 1536 2048 3584  -> Qwen2.5 0.5B 1.5B 3B 7B
+                                    # 2560 4096 -> Qwen3 4B 8B
 
 # vocabulary settings
 code_layer=0                        # 1 single semantic code layer   2 3 4 5 6 7 8 group semantic code layers  0 for interleaved paradigm
 total_audio_vocabsize=4160          # the vocab size of the codec token
-llm_vocabsize=152000                # the vocab size of the LLM model (Qwen2 here)
+llm_vocabsize=152000                # the vocab size of the LLM model (Qwen2/2.5/3 here), original vocab size is 151936
 total_vocabsize=$((total_audio_vocabsize + llm_vocabsize))
 
 # code settings
@@ -43,20 +44,26 @@ interleaved_text_token_num=12
 interleaved_audio_token_num=36
 batch_size_training=6
 use_fp16=true
-use_peft=false
+freeze_llm=true
 num_epochs=10
 lr=1e-4
 task_type=s2t
 warmup_steps=1000
 total_steps=100000
 gradient_accumulation_steps=1
+train_audio_embed_only=true
+
+# PEFT settings
+use_peft=true
+lora_r=32
+lora_alpha=$((lora_r * 2))
 
 # validation settings
 validation_interval=3000
 split_size=0.01
 
 
-exp_name="gpu${num_gpus}-btz${batch_size_training}-lr${lr}-interleave_text${interleaved_text_token_num}_audio${interleaved_audio_token_num}-Qwen2.5-0.5b-s2t"
+exp_name="gpu${num_gpus}-btz${batch_size_training}-lr${lr}-interleave_text${interleaved_text_token_num}_audio${interleaved_audio_token_num}-${llm_name}-s2t"
 exp_name="debug"
 wandb_entity_name=1029713857
 wandb_project_name=SLAM-Omni-Interleaved
@@ -108,7 +115,7 @@ hydra.run.dir=$output_dir \
 ++train_config.model_name=s2s \
 ++train_config.num_epochs=$num_epochs \
 ++train_config.freeze_encoder=true \
-++train_config.freeze_llm=false \
+++train_config.freeze_llm=$freeze_llm \
 ++train_config.batching_strategy=custom \
 ++train_config.warmup_steps=$warmup_steps \
 ++train_config.total_steps=$total_steps \
@@ -125,6 +132,9 @@ hydra.run.dir=$output_dir \
 ++train_config.interleaved_text_token_num=$interleaved_text_token_num \
 ++train_config.interleaved_audio_token_num=$interleaved_audio_token_num \
 ++train_config.gradient_accumulation_steps=$gradient_accumulation_steps \
+++train_config.train_audio_embed_only=$train_audio_embed_only \
+++train_config.peft_config.lora_alpha=$lora_alpha \
+++train_config.peft_config.r=$lora_r \
 ++metric=acc \
 ++log_config.use_wandb=$use_wandb \
 ++log_config.wandb_entity_name=$wandb_entity_name \

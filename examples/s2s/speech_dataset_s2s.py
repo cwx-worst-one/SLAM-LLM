@@ -51,7 +51,7 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
         self.padded_text_vocabsize = self.vocab_config.padded_text_vocabsize
         self.padded_audio_vocabsize = self.vocab_config.padded_audio_vocabsize
         self.total_vocabsize = self.vocab_config.total_vocabsize
-        self._eot = self.vocab_config.eot
+        self._eot = self.tokenizer.eos_token_id if self.tokenizer.eos_token_id else self.vocab_config.eot
         self._pad_t = self.vocab_config.pad_t
         self._input_t = self.vocab_config.input_t
         self._answer_t = self.vocab_config.answer_t
