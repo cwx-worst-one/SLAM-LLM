@@ -161,7 +161,7 @@ class slam_model_s2s(slam_model):
         # resize llm embedding layer
         self.original_vocabsize = self.llm.lm_head.weight.size(0)
         if self.model_config.vocab_config.total_vocabsize != self.original_vocabsize:
-            self.llm.resize_token_embeddings(self.model_config.vocab_config.total_vocabsize)
+            self.llm.resize_token_embeddings(self.model_config.vocab_config.total_vocabsize, mean_resizing=False)
 
             if int(os.environ.get("RANK", "0")) == 0:
                 logger.info("Resize llm embedding layer's vocab size to {}\n".format(self.model_config.vocab_config.total_vocabsize))
@@ -420,7 +420,7 @@ class slam_model_s2s(slam_model):
 
         pad_t = self.model_config.vocab_config.pad_t
         pad_a = self.model_config.vocab_config.pad_a
-        eot = self.model_config.vocab_config.eot
+        eot = self.tokenizer.eos_token_id if self.tokenizer.eos_token_id else self.vocab_config.eot
         eoa = self.model_config.vocab_config.eoa
 
         text_end = False     # Track whether text generation has ended
