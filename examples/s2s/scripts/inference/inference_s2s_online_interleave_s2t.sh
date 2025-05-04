@@ -40,7 +40,7 @@ codec_decoder_type=CosyVoice
 num_latency_tokens=0                # number of latency tokens (same as the number in training)
 do_layershift=false                 # if false, tokens in each layers use the same codebook, otherwise, use different codebooks
 
-ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz6-lr1e-4-interleave_text12_audio36-Qwen3-4B-audio_embed_only-lora_rank32-s2t-new_eos_token/s2s_epoch_1_step_15000
+ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz6-lr1e-4-interleave_text12_audio36-Qwen3-4B-audio_embed_only-lora_rank32-s2t-new_eos_token/s2s_epoch_4_step_2697
 
 # PEFT settings
 use_peft=true

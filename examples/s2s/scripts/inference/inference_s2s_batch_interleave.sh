@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=3
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=1
 export LD_LIBRARY_PATH=/home/v-wenxichen/anaconda3/envs/slam/lib:$LD_LIBRARY_PATH
@@ -33,17 +33,8 @@ codec_decoder_type=CosyVoice
 num_latency_tokens=0                # number of latency tokens (same as the number in training)
 do_layershift=false                 # if false, tokens in each layers use the same codebook, otherwise, use different codebooks
 
-# ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-3b-gradient_accumulation2-lora-audio_embed_only-lora_rank384-alpha768/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-3b-gradient_accumulation2-lora-audio_embed_only-lora_rank384-alpha768-s2s_epoch_3_step_68390
 
-# ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-3b-gradient_accumulation2-lora-audio_embed_only-lora_rank512-alpha1024/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-3b-gradient_accumulation2-lora-audio_embed_only-lora_rank512-alpha1024-s2s_epoch_3_step_68390
-
-# ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-3b-instruct-gradient_accumulation2-lora-audio_embed_only-lora_rank384-alpha768/s2s_epoch_3_step_68390
-
-# ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-3b-instruct-gradient_accumulation2-lora-audio_embed_only-lora_rank1024-alpha2048/s2s_epoch_3_step_68390
-
-# ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz4-lr1e-4-interleave_text12_audio36-Qwen2.5-7b-Instruct-whisper_large-v3-lora-audio_embed_only-lora_rank32-alpha64-s2t/s2s_epoch_4_step_1044
-
-ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz4-lr1e-4-interleave_text12_audio36-Qwen2.5-7b-Instruct-lora-audio_embed_only-lora_rank32-alpha64-s2t/s2s_epoch_4_step_1044
+ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-audio_embed_only-lora_rank32-s2t-both_embed_train-new_eos_token/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-audio_embed_only-lora_rank32-s2t-both_embed_train-new_eos_token-s2s_epoch_3_step_22594
 
 # PEFT settings
 use_peft=true
@@ -56,9 +47,9 @@ lora_alpha=$((lora_r * 2))
 
 # huggingface dataset
 manifest_format=parquet
-val_data_path=TwinkStart/speech-triavia-qa        # llama-questions speech-triavia-qa speech-web-questions
+val_data_path=TwinkStart/speech-web-questions        # llama-questions speech-triavia-qa speech-web-questions
 load_from_cache_file=true
-DATASET_NAME=trivia_qa # llama_qa trivia_qa web_qa
+DATASET_NAME=web_qa # llama_qa trivia_qa web_qa
 cache_dir=/home/wenxi/mydisk/data/standard_qa_eval/$DATASET_NAME
 
 # decode config
@@ -73,6 +64,11 @@ top_p=1.0
 top_k=0
 temperature=1.0
 decode_text_only=false
+if [[ "$task_type" == "s2t" ]]; then
+        codec_decode=false                  # since the model outputs text only, set to false
+else
+        codec_decode=true
+fi
 
 output_text_only=true
 speech_sample_rate=22050            # 22050 for CosyVoice, 24000 for SNAC
@@ -96,7 +92,7 @@ python $code_dir/inference_s2s.py \
         ++model_config.encoder_dim=$encoder_dim \
         ++model_config.encoder_projector=linear \
         ++model_config.codec_decoder_path=$codec_decoder_path \
-        ++model_config.codec_decode=true \
+        ++model_config.codec_decode=$codec_decode \
         ++model_config.vocab_config.code_layer=$code_layer \
         ++model_config.vocab_config.total_vocabsize=$total_vocabsize \
         ++model_config.code_type=$code_type \
