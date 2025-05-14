@@ -59,11 +59,11 @@ lora_r=384
 lora_alpha=$((lora_r * 2))
 
 # validation settings
-validation_interval=10
-split_size=0.0001
+validation_interval=3000
+split_size=0.01
 
 exp_name="gpu${num_gpus}-btz${batch_size_training}-lr${lr}-interleave_text${interleaved_text_token_num}_audio${interleaved_audio_token_num}-Qwen2.5-3b-gradient_accumulation${gradient_accumulation_steps}-lora-audio_embed_only-lora_rank${lora_r}-alpha${lora_alpha}-deepspeed-test"
-exp_name="debug"
+# exp_name="debug"
 wandb_entity_name=1029713857
 wandb_project_name=SLAM-Omni-Interleaved
 
