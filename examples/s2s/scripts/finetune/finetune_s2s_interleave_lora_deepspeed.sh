@@ -42,35 +42,34 @@ cache_dir=/home/wenxi/mydisk/data/VA-cache  # you could set the cache_dir if loa
 modeling_paradigm=interleaved
 interleaved_text_token_num=12
 interleaved_audio_token_num=36
-batch_size_training=3
+batch_size_training=1
 use_fp16=true
 freeze_llm=true
 num_epochs=10
 lr=1e-4
-task_type=s2t
-warmup_steps=1000
-total_steps=100000
+task_type=s2s
+warmup_steps=1500
+total_steps=150000
 gradient_accumulation_steps=1
 train_audio_embed_only=true
 
 # PEFT settings
 use_peft=true
-lora_r=32
+lora_r=384
 lora_alpha=$((lora_r * 2))
 
 # validation settings
-validation_interval=3000
-split_size=0.01
+validation_interval=10
+split_size=0.0001
 
-
-exp_name="gpu${num_gpus}-btz${batch_size_training}-lr${lr}-interleave_text${interleaved_text_token_num}_audio${interleaved_audio_token_num}-${llm_name}-s2t"
+exp_name="gpu${num_gpus}-btz${batch_size_training}-lr${lr}-interleave_text${interleaved_text_token_num}_audio${interleaved_audio_token_num}-Qwen2.5-3b-gradient_accumulation${gradient_accumulation_steps}-lora-audio_embed_only-lora_rank${lora_r}-alpha${lora_alpha}-deepspeed-test"
 exp_name="debug"
 wandb_entity_name=1029713857
 wandb_project_name=SLAM-Omni-Interleaved
 
 home_dir=/valleblob/v-wenxichen/exp/s2s-interleave
 output_dir=$home_dir/$exp_name
-# ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz2-lr1e-4-interleave_text12_audio36/gpu4-btz2-lr1e-4-interleave_text12_audio36-s2s_epoch_3_step_33390  # this line is for resuming training
+# ckpt_path=/valleblob/v-wenxichen/exp/asr/asr-Qwen2-0.5b-gpu4-btz6-lr1e-4-fp16-epochs10-whisper_small-latency5-group3/s2s_epoch_5_step_3596  # this line is for resuming training
 
 if [ "$exp_name" = "debug" ]; then
     use_wandb=false
@@ -114,6 +113,7 @@ hydra.run.dir=$output_dir \
 ++dataset_config.cache_dir=$cache_dir \
 ++train_config.model_name=s2s \
 ++train_config.num_epochs=$num_epochs \
+++train_config.enable_deepspeed=true \
 ++train_config.freeze_encoder=true \
 ++train_config.freeze_llm=$freeze_llm \
 ++train_config.batching_strategy=custom \
@@ -148,33 +148,21 @@ hydra.run.dir=$output_dir \
 # ↑ this line is for resuming training
 
 
-if [[ $CUDA_VISIBLE_DEVICES != *","* ]]; then
-    if [ "$exp_name" = "debug" ]; then
-        python -m debugpy --listen 5678 --wait-for-client $code_dir/finetune_s2s.py \
-            --config-path "conf" \
-            --config-name "prompt.yaml" \
-            $hydra_args
-    else
-        python $code_dir/finetune_s2s.py \
-            --config-path "conf" \
-            --config-name "prompt.yaml" \
-            $hydra_args
-    fi
-else
-    torchrun \
-        --nnodes $num_nodes \
-        --nproc_per_node $num_gpus_per_node \
-        --master_port=1234 \
-        $code_dir/finetune_s2s.py \
-        --config-path "conf" \
-        --config-name "prompt.yaml" \
-        ++train_config.enable_ddp=true \
-        ++train_config.enable_fsdp=false \
-        $hydra_args
-fi
+deepspeed \
+    --master_port=29502 \
+    $code_dir/deepspeed_finetune_s2s.py \
+    --config-path "conf" \
+    --config-name "prompt.yaml" \
+    $hydra_args
+    # --include localhost:4,5 \
 
-# for multi-machine training, you should add the following line to the torchrun command
-# --node_rank=$node_rank \
-# --master_addr=$master_addr \
 
-# bash examples/s2s/scripts/finetune/finetune_s2s_interleave_s2t.sh
+# python -m debugpy --wait-for-client --listen 5678 -m deepspeed.launcher.runner \
+#     --master_port=29502 \
+#     $code_dir/deepspeed_finetune_s2s.py \
+#     --config-path "conf" \
+#     --config-name "prompt.yaml" \
+#     $hydra_args
+
+
+# bash examples/s2s/scripts/finetune/finetune_s2s_interleave_lora_deepspeed.sh

@@ -88,7 +88,7 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
     best_val_acc = 0.0
     for epoch in range(train_config.num_epochs):
         epoch_start_time = time.perf_counter()
-        with MemoryTrace() as memtrace,Join([model,optimizer]):  # track the memory usage
+        with MemoryTrace() as memtrace:  # track the memory usage
             model.train()
             total_loss = 0.0
             total_acc = 0.0

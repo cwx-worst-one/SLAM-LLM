@@ -13,17 +13,18 @@ num_gpus=$(( num_gpus_per_node * num_nodes ))
 
 whisper_size=small                  # tiny base small medium large-v3
 speech_encoder_path="/valleblob/v-wenxichen/models/whisper/${whisper_size}.pt"   # different whisper size
-llm_path="/valleblob/v-wenxichen/models/qwen/qwen2.5-3b"  # Qwen/Qwen2-0.5B, you can choose other Qwen models (Qwen2 or Qwen2.5)
-llm_name=Qwen2.5-3b
+llm_path="/valleblob/v-wenxichen/models/qwen/qwen2.5-7b-instruct"  # Qwen 2/2.5/3
+llm_name=qwen2.5-7b-instruct
 
 encoder_dim=768                     # 384 512 768 1024 1280
 mel_size=80                         # 80 128 ( only whisper-large-v3 supports 128 )
-llm_dim=2048                         # 896 1536 2048 3584  -> 0.5B 1.5B 3B 7B
+llm_dim=3584                        # 896 1536 2048 3584  -> Qwen2.5 0.5B 1.5B 3B 7B
+                                    # 2560 4096 -> Qwen3 4B 8B
 
 # vocabulary settings
 code_layer=0                        # 1 single semantic code layer   2 3 4 5 6 7 8 group semantic code layers  0 for interleaved paradigm
 total_audio_vocabsize=4160          # the vocab size of the codec token
-llm_vocabsize=152000                # the vocab size of the LLM model (Qwen2 here)
+llm_vocabsize=152000                # the vocab size of the LLM model (Qwen2/2.5/3 here), original vocab size is 151936
 total_vocabsize=$((total_audio_vocabsize + llm_vocabsize))
 
 # code settings
@@ -35,6 +36,7 @@ manifest_format=parquet             # parquet or jsonl
 train_data_path=/home/wenxi/mydisk/data/VoiceAssistant-400K-v2-arrow
 val_data_path=/home/wenxi/mydisk/data/VoiceAssistant-400K-v2-arrow
 load_from_cache_file=true           # set to true if you have already generated the cache file, otherwise set to false
+cache_dir=/home/wenxi/mydisk/data/VA-cache  # you could set the cache_dir if load_from_cache_file=true and the cache file is not in the default cache_dir
 
 # training settings
 modeling_paradigm=interleaved
@@ -48,7 +50,7 @@ lr=1e-4
 task_type=s2s
 warmup_steps=1500
 total_steps=150000
-gradient_accumulation_steps=2
+gradient_accumulation_steps=1
 train_audio_embed_only=true
 
 # PEFT settings
@@ -61,7 +63,7 @@ validation_interval=3000
 split_size=0.01
 
 exp_name="gpu${num_gpus}-btz${batch_size_training}-lr${lr}-interleave_text${interleaved_text_token_num}_audio${interleaved_audio_token_num}-Qwen2.5-3b-gradient_accumulation${gradient_accumulation_steps}-lora-audio_embed_only-lora_rank${lora_r}-alpha${lora_alpha}"
-# exp_name="debug"
+exp_name="debug"
 wandb_entity_name=1029713857
 wandb_project_name=SLAM-Omni-Interleaved
 
@@ -108,6 +110,7 @@ hydra.run.dir=$output_dir \
 ++dataset_config.modeling_paradigm=$modeling_paradigm \
 ++dataset_config.interleaved_text_token_num=$interleaved_text_token_num \
 ++dataset_config.interleaved_audio_token_num=$interleaved_audio_token_num \
+++dataset_config.cache_dir=$cache_dir \
 ++train_config.model_name=s2s \
 ++train_config.num_epochs=$num_epochs \
 ++train_config.freeze_encoder=true \
