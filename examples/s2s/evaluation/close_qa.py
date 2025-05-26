@@ -122,6 +122,8 @@ def evaluate(pred_file: str, gt_file: str, use_exist_match: bool = False, file_f
         with open(mismatch_file, 'w', encoding='utf-8') as f:
             f.write(f"[Examples of Incorrect Predictions] ({len(mismatches)} shown)\n")
             for key, gt, pred in mismatches:
+                gt = gt.strip()
+                pred = pred.strip()
                 f.write(f"{key}\n  GTs : {gt}\n  Pred: {pred}\n\n")
         print(f"\n[Examples of Incorrect Predictions written to {mismatch_file}]")
 

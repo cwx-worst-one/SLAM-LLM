@@ -1,15 +1,18 @@
 #!/bin/bash
 
 DATASET=llama_qa # llama_qa trivia_qa web_qa
-DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET}/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-7b-Instruct-gradient_accumulation2-lora-audio_embed_only-lora_rank32-alpha64-s2t-whisper_small
+DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET}/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-7b-Instruct-lora-audio_embed_only-freeze_llm-s2t-whisper_large-v3-qwen2.5-7b-instruct-prediction_answer
+# DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/trivia_qa_asr/qwen2.5-7b-instruct/trivia_qa_asr_predictions_with_labels.jsonl
 FORMAT=tsv    # tsv jsonl
 
-PRED_FILE="$DECODE_DIR/pred_text"
-# PRED_FILE="$DECODE_DIR/pred_audio_asr_text"
-GT_FILE="$DECODE_DIR/gt_text"
 
-if [ "$FORMAT" == "jsonl" ]; then
-    PRED_FILE="$DECODE_DIR/test.jsonl"
+if [[ "$FORMAT" == "tsv" ]]; then
+    PRED_FILE="$DECODE_DIR/pred_text"
+    # PRED_FILE="$DECODE_DIR/pred_audio_asr_text"
+    GT_FILE="$DECODE_DIR/gt_text"
+else
+    PRED_FILE="$DECODE_DIR"
+    GT_FILE=""
 fi
 
 # -m debugpy --listen 5678 --wait-for-client

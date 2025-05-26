@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=0
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=1
 export LD_LIBRARY_PATH=/home/v-wenxichen/anaconda3/envs/slam/lib:$LD_LIBRARY_PATH
@@ -11,12 +11,12 @@ code_dir=examples/s2s
 
 whisper_size=small                  # tiny base small medium large-v3
 speech_encoder_path="/valleblob/v-wenxichen/models/whisper/${whisper_size}.pt"   # replace this with your own whisper model path (different whisper size)
-llm_path="/valleblob/v-wenxichen/models/qwen/qwen2.5-3b-instruct"
+llm_path="/valleblob/v-wenxichen/models/qwen/qwen2.5-7b-instruct"
 codec_decoder_path="/valleblob/v-wenxichen/models/CosyVoice/CosyVoice-300M-SFT" # replace this with your own CosyVoice model path
 
 encoder_dim=768                     # 384 512 768 896 1024 1280 
 mel_size=80                         # 80 128 (128 for whisper-large only, 80 for others)
-llm_dim=2048                         # 896 1536 2048 3584  -> 0.5B 1.5B 3B 7B
+llm_dim=3584                         # 896 1536 2048 3584  -> 0.5B 1.5B 3B 7B
 
 task_type=s2s
 
@@ -32,11 +32,11 @@ codec_decoder_type=CosyVoice
 num_latency_tokens=0                # number of latency tokens (same as the number in training)
 do_layershift=false                 # if false, tokens in each layers use the same codebook, otherwise, use different codebooks
 
-ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-3b-instruct-gradient_accumulation2-lora-audio_embed_only-lora_rank1024-alpha2048/s2s_epoch_3_step_68390
+ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz1-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-gradient_accumulation2-lora-audio_embed_only-lora_rank384-alpha768-deepspeed-zero2/s2s_epoch_2_step_98695/global_step106652
 
 # PEFT settings
 use_peft=true
-lora_r=1024
+lora_r=384
 lora_alpha=$((lora_r * 2))
 
 # decode config

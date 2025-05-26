@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=3
+export CUDA_VISIBLE_DEVICES=2
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=1
 export LD_LIBRARY_PATH=/home/v-wenxichen/anaconda3/envs/slam/lib:$LD_LIBRARY_PATH
@@ -9,14 +9,14 @@ export CUDA_LAUNCH_BLOCKING=1
 
 code_dir=examples/s2s
 
-whisper_size=small                  # tiny base small medium large-v3
+whisper_size=large-v3                  # tiny base small medium large-v3
 speech_encoder_path="/valleblob/v-wenxichen/models/whisper/${whisper_size}.pt"   # replace this with your own whisper model path (different whisper size)
 llm_path="/valleblob/v-wenxichen/models/qwen/qwen2.5-7b-instruct"
 codec_decoder_path="/valleblob/v-wenxichen/models/CosyVoice/CosyVoice-300M-SFT" # replace this with your own CosyVoice model path
 llm_name=Qwen2.5-7b-Instruct
 
-encoder_dim=768                     # 384 512 768 896 1024 1280 
-mel_size=80                         # 80 128 (128 for whisper-large only, 80 for others)
+encoder_dim=1280                     # 384 512 768 896 1024 1280 
+mel_size=128                         # 80 128 (128 for whisper-large only, 80 for others)
 llm_dim=3584                         # 896 1536 2048 3584  -> 0.5B 1.5B 3B 7B
 
 task_type=s2t
@@ -34,10 +34,10 @@ num_latency_tokens=0                # number of latency tokens (same as the numb
 do_layershift=false                 # if false, tokens in each layers use the same codebook, otherwise, use different codebooks
 
 
-ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-audio_embed_only-lora_rank32-s2t-both_embed_train-new_eos_token/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-audio_embed_only-lora_rank32-s2t-both_embed_train-new_eos_token-s2s_epoch_3_step_22594
+ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz1-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-s2t-freeze_llm-gradient_accumulation_steps2-total_steps150000-qwen2.5-7b-instruct_prediction_answer/s2s_epoch_3_step_56390
 
 # PEFT settings
-use_peft=true
+use_peft=false
 lora_r=32
 lora_alpha=$((lora_r * 2))
 
@@ -76,7 +76,7 @@ inference_online=false
 # audio_prompt_path=./examples/s2s/audio_prompt/zh/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 audio_prompt_path=./examples/s2s/audio_prompt/en/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 
-decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-interleave_text12_audio36-${llm_name}-gradient_accumulation2-lora-audio_embed_only-lora_rank$lora_r-alpha$lora_alpha-s2t-whisper_${whisper_size}
+decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-interleave_text12_audio36-${llm_name}-lora-audio_embed_only-freeze_llm-s2t-whisper_${whisper_size}-qwen2.5-7b-instruct-prediction_answer
 
 # -m debugpy --listen 5678 --wait-for-client
 python $code_dir/inference_s2s.py \

@@ -38,8 +38,8 @@ def add_labels_to_jsonl(input_path, output_path, dataset_name, split, cache_dir)
 if __name__ == "__main__":
     # Example usage
     add_labels_to_jsonl(
-        input_path="/home/wenxi/mydisk/exp/standard_qa_eval/trivia_qa/qwen2.5-7b-instruct/test_no_label.jsonl",
-        output_path="/home/wenxi/mydisk/exp/standard_qa_eval/trivia_qa/qwen2.5-7b-instruct/test.jsonl",
+        input_path="/home/wenxi/mydisk/exp/standard_qa_eval/trivia_qa/qwen2.5-7b-instruct-new/trivia_qa_predictions.jsonl",
+        output_path="/home/wenxi/mydisk/exp/standard_qa_eval/trivia_qa/qwen2.5-7b-instruct-new/trivia_qa_predictions_with_labels.jsonl",
         dataset_name="TwinkStart/speech-triavia-qa",
         split="test",
         cache_dir="/home/wenxi/mydisk/data/standard_qa_eval/trivia_qa"
