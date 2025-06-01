@@ -1,9 +1,9 @@
 #!/bin/bash
 
 DATASET=llama_qa # llama_qa trivia_qa web_qa
-DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET}/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-7b-Instruct-lora-audio_embed_only-freeze_llm-s2t-whisper_large-v3-qwen2.5-7b-instruct-prediction_answer
-# DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/trivia_qa_asr/qwen2.5-7b-instruct/trivia_qa_asr_predictions_with_labels.jsonl
-FORMAT=tsv    # tsv jsonl
+# DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET}/gpu4-btz1-lr1e-4-interleave_text12_audio36-Qwen2.5-7b-Instruct-lora-audio_embed_only-freeze_llm-s2t-whisper_large-v3-data_ratio0.75
+DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/web_qa/qwen2.5-3b-instruct-new/web_qa_predictions_with_labels.jsonl
+FORMAT=jsonl    # tsv jsonl
 
 
 if [[ "$FORMAT" == "tsv" ]]; then

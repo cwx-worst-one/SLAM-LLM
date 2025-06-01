@@ -34,7 +34,7 @@ num_latency_tokens=0                # number of latency tokens (same as the numb
 do_layershift=false                 # if false, tokens in each layers use the same codebook, otherwise, use different codebooks
 
 
-ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz1-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-s2t-freeze_llm-gradient_accumulation_steps2-total_steps150000-qwen2.5-7b-instruct_prediction_answer/s2s_epoch_3_step_56390
+ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-s2t-freeze_llm-total_steps100000-data_ratio0.5/s2s_epoch_4_step_8697
 
 # PEFT settings
 use_peft=false
@@ -76,7 +76,7 @@ inference_online=false
 # audio_prompt_path=./examples/s2s/audio_prompt/zh/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 audio_prompt_path=./examples/s2s/audio_prompt/en/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 
-decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-interleave_text12_audio36-${llm_name}-lora-audio_embed_only-freeze_llm-s2t-whisper_${whisper_size}-qwen2.5-7b-instruct-prediction_answer
+decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-interleave_text12_audio36-${llm_name}-lora-audio_embed_only-freeze_llm-s2t-whisper_${whisper_size}-data_ratio0.5
 
 # -m debugpy --listen 5678 --wait-for-client
 python $code_dir/inference_s2s.py \

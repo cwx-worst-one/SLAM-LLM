@@ -181,12 +181,13 @@ def main(kwargs: DictConfig):
     elif train_config.enable_ddp:
         model = model.cuda(local_rank)
         model = DDP(model, device_ids=[local_rank],
-                    find_unused_parameters=kwargs.get("train_conf", {}).get("find_unused_parameters", False))
+                    find_unused_parameters=getattr(train_config, "find_unused_parameters", False))
     elif not train_config.quantization:
         model.to(device)
 
     # dataset_config = generate_dataset_config(train_config, kwargs)
-    logger.info("dataset_config: {}".format(dataset_config))
+    if int(os.environ.get("RANK", "0")) == 0:
+        logger.info("dataset_config: {}".format(dataset_config))
     if not (train_config.enable_fsdp or train_config.enable_ddp) or rank == 0:
         if log_config.use_wandb:
             wandb.config.update({"dataset_config": dataset_config})

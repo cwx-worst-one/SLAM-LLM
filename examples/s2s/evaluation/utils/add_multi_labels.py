@@ -23,7 +23,7 @@ def add_labels_to_jsonl(input_path, output_path, dataset_name, split, cache_dir)
             data = json.loads(line)
 
             # Get the corresponding list of questions from the dataset
-            questions = dataset[i]["answer"]
+            questions = dataset[i]["answers"]
             if isinstance(questions, list):
                 label_str = "|||".join(questions)
             else:
@@ -38,9 +38,9 @@ def add_labels_to_jsonl(input_path, output_path, dataset_name, split, cache_dir)
 if __name__ == "__main__":
     # Example usage
     add_labels_to_jsonl(
-        input_path="/home/wenxi/mydisk/exp/standard_qa_eval/trivia_qa/qwen2.5-7b-instruct-new/trivia_qa_predictions.jsonl",
-        output_path="/home/wenxi/mydisk/exp/standard_qa_eval/trivia_qa/qwen2.5-7b-instruct-new/trivia_qa_predictions_with_labels.jsonl",
-        dataset_name="TwinkStart/speech-triavia-qa",
+        input_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa/qwen2.5-3b-instruct-new/web_qa_predictions.jsonl",
+        output_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa/qwen2.5-3b-instruct-new/web_qa_predictions_with_labels.jsonl",
+        dataset_name="TwinkStart/speech-web-questions",
         split="test",
-        cache_dir="/home/wenxi/mydisk/data/standard_qa_eval/trivia_qa"
+        cache_dir="/home/wenxi/mydisk/data/standard_qa_eval/web_qa"
     )

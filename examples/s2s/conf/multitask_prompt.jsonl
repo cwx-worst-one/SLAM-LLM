@@ -1,0 +1,5 @@
+{"task": "s2s", "prompt": "Conduct a spoken conversation with the user."}
+{"task": "s2t", "prompt": "Listen to the user's speech and respond with text."}
+{"task": "asr", "prompt": "Transcribe the user's speech into text."}
+{"task": "t2t", "prompt": "Read the user's text and reply with text."}
+{"task": "tts", "prompt": "Convert the given text into natural-sounding speech."}
