@@ -9,8 +9,11 @@ from utils.snac_utils import layershift, get_snac_answer_token, simple_shift
 from utils.codec_utils import get_single_layer_answer_token, get_group_answer_token
 from utils.dataset_utils import get_first_existing_value
 import librosa
+import random
+import logging
+import os
 
-
+logger = logging.getLogger(__name__)
 class SpeechDatasetJsonl(torch.utils.data.Dataset):
     
     def __init__(self,
@@ -25,6 +28,22 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
         # self.data_list = contents
         self.IGNORE_INDEX = -100  # The default setting in CrossEntropyLoss
         self.prompt = dataset_config.get("prompt", None)
+        self.multitask_prompt_path = dataset_config.get("multitask_prompt_path", None)
+        self.multitask_prompt_list = {}
+        if self.multitask_prompt_path is not None:
+            with open(dataset_config.multitask_prompt_path) as f_prompt:
+                for line in f_prompt:
+                    item = json.loads(line.strip())
+                    if item["task"] in self.multitask_prompt_list:
+                        self.multitask_prompt_list[item["task"]].append(item["prompt"])
+                    else:
+                        self.multitask_prompt_list[item["task"]] = [item["prompt"]]
+            if split == "train" and int(os.environ.get("RANK", "0")) == 0:
+                logger.info("[Multitask Prompt]")
+                for task, prompts in self.multitask_prompt_list.items():
+                    logger.info(f"  {task}:")
+                    for p in prompts:
+                        logger.info(f"    - {p}")
         self.mel_size = dataset_config.get("mel_size", 80) # 80 for whisper large v1 and v2, 128 for large v3
         self.prompt_template = "<SYSTEM>: {}\n "
         self.answer_template = "{}"
@@ -94,22 +113,27 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
 
         # TODO: design a better way to load data
         if self.manifest_format == "parquet":
-            from datasets import load_dataset, load_from_disk
-            if dataset_config.load_from_cache_file:       
-                ds = load_dataset(dataset_config.train_data_path, cache_dir=dataset_config.cache_dir)
-            else:
-                ds = load_from_disk(dataset_config.train_data_path)   # load_from local disk
+            if dataset_config.train_data_path is not None and dataset_config.val_data_path is not None and dataset_config.train_data_path != dataset_config.val_data_path:
+                if split == "train": 
+                    ds_train = self._load_dataset(dataset_config.train_data_path, dataset_config.load_from_cache_file, dataset_config.cache_dir_train)
+                    self.data_list = ds_train['train'] if 'train' in ds_train else ds_train
+                elif split == "val":
+                    ds_val = self._load_dataset(dataset_config.val_data_path, dataset_config.load_from_cache_file, dataset_config.cache_dir_val)
+                    self.data_list = ds_val['train'] if 'train' in ds_val else ds_val
 
-            if split == "train" or (split in ["val", "test"] and split not in ds):
-                # train_val_split = ds['train'].train_test_split(test_size=self.split_size, seed=self.seed)
+            elif split == "train" or split == "val":
+                ds = self._load_dataset(dataset_config.train_data_path, dataset_config.load_from_cache_file, dataset_config.cache_dir)
                 ds_train = ds['train'] if 'train' in ds else ds
-                train_val_split = ds_train.train_test_split(test_size=self.split_size, seed=self.seed)
+                train_val_split = ds_train.train_test_split(test_size=self.split_size, seed=self.seed, shuffle=False)
+                
                 if split == "train":
                     self.data_list = train_val_split['train']
                 else:
                     self.data_list = train_val_split['test']
+
             elif split == "test":
-                self.data_list = ds['test']
+                ds_test = self._load_dataset(dataset_config.train_data_path, dataset_config.load_from_cache_file, dataset_config.cache_dir)
+                self.data_list = ds_test['test']
 
         elif self.manifest_format == "jsonl":
             if split == "train":
@@ -133,6 +157,12 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
     
     def __len__(self):
         return len(self.data_list)
+
+    def _load_dataset(self, path, use_cache, cache_dir):
+        from datasets import load_dataset, load_from_disk
+        if path is None:
+            return None
+        return load_dataset(path, cache_dir=cache_dir) if use_cache else load_from_disk(path)
 
     def extract_audio_feature(self, audio_path):
         # audio path is a dictionary, resample the audio to 16kHz
@@ -171,14 +201,20 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
 
         return audio_res, audio_length
 
-    def get_input_ids(self, length, special_token_a, special_token_t):
+    def get_input_ids(self, length, special_token_a, special_token_t, task_type=None):
         input_ids = []
         if self.code_layer == 0:
             input_ids_item = []
-            input_ids_item.append(self.layershift(self._input_a, 0))
-            input_ids_item += [self.layershift(self._pad_a, 0)] * length
-            input_ids_item += [(self.layershift(self._eoa, 0)), self.layershift(special_token_a, 0)]
-            input_ids = torch.tensor(input_ids_item).unsqueeze(0).unsqueeze(0)
+            if task_type is not None and task_type in ["tts", "t2s", "t2t"]:
+                input_ids_item.append(self._input_t)
+                input_ids_item += [self._pad_t] * length
+                input_ids_item += [self._eot, special_token_t]
+                input_ids = torch.tensor(input_ids_item).unsqueeze(0).unsqueeze(0)
+            else:
+                input_ids_item.append(self.layershift(self._input_a, 0))
+                input_ids_item += [self.layershift(self._pad_a, 0)] * length
+                input_ids_item += [(self.layershift(self._eoa, 0)), self.layershift(special_token_a, 0)]
+                input_ids = torch.tensor(input_ids_item).unsqueeze(0).unsqueeze(0)
             return input_ids
 
         for i in range(self.code_layer):
@@ -291,7 +327,7 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
         data_dict = self.data_list[index]
-        task_type = self.task_type  # TODO: this type could be determined by sampling strategy instead of hard-coded
+        task_type = self.task_type
         audio_mel = None
         example_ids = None
         key = None
@@ -308,12 +344,14 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
             target_text = get_first_existing_value(data_dict, ["answer", "answer_text", "Answer", "answers", "Answers"])
             if source_audio is not None and type(source_audio) == dict:
                 key = source_audio.get("path", None)
+            task_type = data_dict.get("task_type", task_type)
         elif self.manifest_format == "jsonl":
             source_audio = data_dict.get("source_wav", None)
             target_audio = data_dict.get("target_token", None)
             source_text = data_dict.get("source_text", None)
             target_text = data_dict.get("target_text", None)
             key = data_dict.get("key", None)
+            task_type = data_dict.get("task_type", task_type)
         else:
             raise ValueError("manifest_format must be one of [parquet, jsonl]")
 
@@ -322,7 +360,7 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
         
         if task_type in ["s2s", "t2s", "tts"] and target_audio is not None:
             target_audio, target_audio_length = self.extract_audio_feature(target_audio)
-        elif task_type in ["asr", "s2t"]:
+        elif task_type in ["asr", "s2t", "t2t"]:
             target_audio, target_audio_length = None, 0
 
         if self.fix_length_audio > 0:
@@ -330,6 +368,8 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
 
         if "system prompt" in data_dict:
             prompt = data_dict["system prompt"]
+        elif self.multitask_prompt_path is not None and task_type in self.multitask_prompt_list:
+            prompt = random.choice(self.multitask_prompt_list[task_type])
         else:
             prompt = self.prompt
         prompt = self.prompt_template.format(prompt)
@@ -351,7 +391,7 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
         if task_type in ["s2s", "asr", "s2t"]:
             example_ids = self.get_input_ids(audio_length, self.special_token_a, self.special_token_t)
             example_ids = [torch.cat((prompt_ids[i], example_ids[i]), dim = 1) for i in range(self.code_layer + 1)] # 1 for text layer
-        elif task_type in ["tts", "t2s"]:
+        elif task_type in ["tts", "t2s", "t2t"]:
             text_input = target_text if self.task_type == "tts" else source_text
             if task_type == "t2s" and any(tag in text_input for tag in ["<USER>:", "<OBSERVATION>:"]):
                 for tag in ["<USER>:", "<OBSERVATION>:"]:
@@ -361,7 +401,7 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
             text_input_ids = self.tokenizer.encode(text_input)
             text_input_length = len(text_input_ids)
             text_input_ids = torch.tensor(text_input_ids, dtype=torch.int64)
-            example_ids = self.get_input_ids(text_input_length, self.special_token_a, self.special_token_t) # <prompt> <bos> <text> <eos> <task>
+            example_ids = self.get_input_ids(text_input_length, self.special_token_a, self.special_token_t, task_type) # <prompt> <bos> <text> <eos> <task>
             text_layer = example_ids[self.code_layer]
             text_layer = torch.cat((text_layer[:,:1], text_input_ids.unsqueeze(0), text_layer[:,-2:]), dim=1)
             example_ids[self.code_layer] = text_layer
@@ -370,7 +410,7 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
             raise ValueError(f"task_type {task_type} is not supported")
 
         input_length = audio_length
-        if task_type in ["tts", "t2s"]:
+        if task_type in ["tts", "t2s", "t2t"]:
             input_length = text_input_length
 
         if task_type == "asr":
@@ -562,14 +602,20 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
         audio_mel = None
         audio_mel_post_mask = None
 
-        if self.input_type == "raw" and self.task_type in ["s2s", "asr", "s2t"]:
+        task_type = [s['task_type'] for s in samples]
+        if all(t == task_type[0] for t in task_type):
+            batch_task_type = task_type[0]
+        else:
+            raise ValueError("All samples must have the same task type for collator.")
+
+        if self.input_type == "raw" and batch_task_type in ["s2s", "asr", "s2t"]:
             audio_raw_max_length = max([s['audio'].shape[0] for s in samples])
             audio_raw = torch.stack([self.pad(s['audio'], audio_raw_max_length, 0)
                                      for s in samples])
             audio_mask = torch.zeros(len(samples), audio_raw_max_length)
             for line, sample in enumerate(samples):
                 audio_mask[line, :sample['audio'].shape[0]] = 1
-        elif self.input_type == "mel" and self.task_type in ["s2s", "asr", "s2t"]:
+        elif self.input_type == "mel" and batch_task_type in ["s2s", "asr", "s2t"]:
             audio_mel_max_length = max([s['audio_mel'].shape[0] for s in samples])
             audio_mel = torch.stack([self.pad(s['audio_mel'], audio_mel_max_length, 0)
                                   for s in samples])
@@ -581,8 +627,6 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
         for index in range(len(samples)):
             padding_left = input_prompt_max_length - input_prompt_lengths[index] + 1 + samples[index]['prompt_length'] # +1 for <bos>
             modality_mask[index, padding_left:padding_left+samples[index]["audio_length"]] = True
-
-        task_type = [s['task_type'] for s in samples]
 
         if self.inference_mode:
             keys = [s['key'] for s in samples]
