@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=3
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=1
 export LD_LIBRARY_PATH=/home/v-wenxichen/anaconda3/envs/slam/lib:$LD_LIBRARY_PATH
@@ -34,7 +34,7 @@ num_latency_tokens=0                # number of latency tokens (same as the numb
 do_layershift=false                 # if false, tokens in each layers use the same codebook, otherwise, use different codebooks
 
 
-ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-s2t-freeze_llm-total_steps100000-data_ratio0.5/s2s_epoch_4_step_8697
+ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-s2t_0.25_t2t_0.75/s2s_epoch_3_step_21824
 
 # PEFT settings
 use_peft=false
@@ -47,9 +47,9 @@ lora_alpha=$((lora_r * 2))
 
 # huggingface dataset
 manifest_format=parquet
-val_data_path=TwinkStart/speech-web-questions        # llama-questions speech-triavia-qa speech-web-questions
+val_data_path=TwinkStart/speech-triavia-qa        # llama-questions speech-triavia-qa speech-web-questions
 load_from_cache_file=true
-DATASET_NAME=web_qa # llama_qa trivia_qa web_qa
+DATASET_NAME=trivia_qa # llama_qa trivia_qa web_qa
 cache_dir=/home/wenxi/mydisk/data/standard_qa_eval/$DATASET_NAME
 
 # decode config
@@ -76,12 +76,12 @@ inference_online=false
 # audio_prompt_path=./examples/s2s/audio_prompt/zh/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 audio_prompt_path=./examples/s2s/audio_prompt/en/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 
-decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-interleave_text12_audio36-${llm_name}-lora-audio_embed_only-freeze_llm-s2t-whisper_${whisper_size}-data_ratio0.5
+decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-interleave_text12_audio36-${llm_name}-lora-audio_embed_only-freeze_llm-s2t-whisper_${whisper_size}-s2t_0.25_t2t_0.75
 
 # -m debugpy --listen 5678 --wait-for-client
 python $code_dir/inference_s2s.py \
         --config-path "conf" \
-        --config-name "prompt.yaml" \
+        --config-name "prompt_${task_type}.yaml" \
         hydra.run.dir=$ckpt_path \
         ++model_config.llm_name=$llm_name \
         ++model_config.llm_path=$llm_path \

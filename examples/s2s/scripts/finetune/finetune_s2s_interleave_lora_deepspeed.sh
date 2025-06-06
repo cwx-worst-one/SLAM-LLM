@@ -152,7 +152,7 @@ deepspeed \
     --master_port=29502 \
     $code_dir/deepspeed_finetune_s2s.py \
     --config-path "conf" \
-    --config-name "prompt.yaml" \
+    --config-name "prompt_${task_type}.yaml" \
     $hydra_args
     # --include localhost:4,5 \
 
@@ -161,7 +161,7 @@ deepspeed \
 #     --master_port=29502 \
 #     $code_dir/deepspeed_finetune_s2s.py \
 #     --config-path "conf" \
-#     --config-name "prompt.yaml" \
+#     --config-name "prompt_${task_type}.yaml" \
 #     $hydra_args
 
 

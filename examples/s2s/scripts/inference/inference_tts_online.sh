@@ -66,7 +66,7 @@ fi
 # -m debugpy --listen 5678 --wait-for-client
 python $code_dir/inference_s2s.py \
         --config-path "conf" \
-        --config-name "prompt_tts.yaml" \
+        --config-name "prompt_${task_type}.yaml" \
         hydra.run.dir=$ckpt_path \
         ++model_config.llm_name=qwen2-0.5b \
         ++model_config.llm_path=$llm_path \

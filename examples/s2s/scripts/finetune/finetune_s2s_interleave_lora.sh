@@ -151,12 +151,12 @@ if [[ $CUDA_VISIBLE_DEVICES != *","* ]]; then
     if [ "$exp_name" = "debug" ]; then
         python -m debugpy --listen 5678 --wait-for-client $code_dir/finetune_s2s.py \
             --config-path "conf" \
-            --config-name "prompt.yaml" \
+            --config-name "prompt_${task_type}.yaml" \
             $hydra_args
     else
         python $code_dir/finetune_s2s.py \
             --config-path "conf" \
-            --config-name "prompt.yaml" \
+            --config-name "prompt_${task_type}.yaml" \
             $hydra_args
     fi
 else
@@ -166,7 +166,7 @@ else
         --master_port=1234 \
         $code_dir/finetune_s2s.py \
         --config-path "conf" \
-        --config-name "prompt.yaml" \
+        --config-name "prompt_${task_type}.yaml" \
         ++train_config.enable_ddp=true \
         ++train_config.enable_fsdp=false \
         $hydra_args

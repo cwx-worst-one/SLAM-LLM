@@ -11,13 +11,13 @@ num_gpus_per_node=$(( $(echo ${CUDA_VISIBLE_DEVICES} | tr -cd ',' | wc -c) + 1 )
 num_nodes=1
 num_gpus=$(( num_gpus_per_node * num_nodes ))
 
-whisper_size=small                  # tiny base small medium large-v3
+whisper_size=large-v3                  # tiny base small medium large-v3
 speech_encoder_path="/valleblob/v-wenxichen/models/whisper/${whisper_size}.pt"   # different whisper size
 llm_path="/valleblob/v-wenxichen/models/qwen/qwen2.5-7b-instruct"  # Qwen 2/2.5/3
 llm_name=qwen2.5-7b-instruct
 
-encoder_dim=768                     # 384 512 768 1024 1280
-mel_size=80                         # 80 128 ( only whisper-large-v3 supports 128 )
+encoder_dim=1280                     # 384 512 768 1024 1280
+mel_size=128                         # 80 128 ( only whisper-large-v3 supports 128 )
 llm_dim=3584                        # 896 1536 2048 3584  -> Qwen2.5 0.5B 1.5B 3B 7B
                                     # 2560 4096 -> Qwen3 4B 8B
 
@@ -63,7 +63,7 @@ lora_r=32
 lora_alpha=$((lora_r * 2))
 
 # validation settings
-validation_interval=10
+validation_interval=3000
 split_size=0
 
 
@@ -161,12 +161,12 @@ if [[ $CUDA_VISIBLE_DEVICES != *","* ]]; then
     if [ "$exp_name" = "debug" ]; then
         python -m debugpy --listen 5678 --wait-for-client $code_dir/finetune_s2s.py \
             --config-path "conf" \
-            --config-name "prompt.yaml" \
+            --config-name "prompt_${task_type}.yaml" \
             $hydra_args
     else
         python $code_dir/finetune_s2s.py \
             --config-path "conf" \
-            --config-name "prompt.yaml" \
+            --config-name "prompt_${task_type}.yaml" \
             $hydra_args
     fi
 else
@@ -177,7 +177,7 @@ else
         --master_port=1234 \
         $code_dir/finetune_s2s.py \
         --config-path "conf" \
-        --config-name "prompt.yaml" \
+        --config-name "prompt_${task_type}.yaml" \
         ++train_config.enable_ddp=true \
         ++train_config.enable_fsdp=false \
         $hydra_args
