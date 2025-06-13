@@ -34,12 +34,13 @@ num_latency_tokens=0                # number of latency tokens (same as the numb
 do_layershift=false                 # if false, tokens in each layers use the same codebook, otherwise, use different codebooks
 
 
-ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-s2t_0.25_t2t_0.75/s2s_epoch_3_step_21824
+ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-qwen2.5-7b-instruct-s2t_0.50-t2t_0.50-total_steps_120000-lora_r_32/s2s_epoch_4_step_1236
 
 # PEFT settings
-use_peft=false
+use_peft=true
 lora_r=32
-lora_alpha=$((lora_r * 2))
+lora_alpha=$(($lora_r * 2))
+# lora_alpha=16
 
 # jsonl dataset
 # manifest_format=jsonl
@@ -47,9 +48,9 @@ lora_alpha=$((lora_r * 2))
 
 # huggingface dataset
 manifest_format=parquet
-val_data_path=TwinkStart/speech-triavia-qa        # llama-questions speech-triavia-qa speech-web-questions
+val_data_path=TwinkStart/speech-web-questions        # llama-questions speech-triavia-qa speech-web-questions
 load_from_cache_file=true
-DATASET_NAME=trivia_qa # llama_qa trivia_qa web_qa
+DATASET_NAME=web_qa # llama_qa trivia_qa web_qa
 cache_dir=/home/wenxi/mydisk/data/standard_qa_eval/$DATASET_NAME
 
 # decode config
@@ -76,7 +77,8 @@ inference_online=false
 # audio_prompt_path=./examples/s2s/audio_prompt/zh/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 audio_prompt_path=./examples/s2s/audio_prompt/en/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 
-decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-interleave_text12_audio36-${llm_name}-lora-audio_embed_only-freeze_llm-s2t-whisper_${whisper_size}-s2t_0.25_t2t_0.75
+decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-${llm_name}-lora_r${lora_r}-audio_embed_only-s2t-whisper_${whisper_size}-s2t_0.50-t2t_0.50
+# decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-audio_embed_only-lora_rank32-s2t-new_eos_token-whisper-large-v3-lora_alpha$lora_alpha
 
 # -m debugpy --listen 5678 --wait-for-client
 python $code_dir/inference_s2s.py \

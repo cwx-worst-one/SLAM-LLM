@@ -23,14 +23,18 @@ def add_labels_to_jsonl(input_path, output_path, dataset_name, split, cache_dir)
             data = json.loads(line)
 
             # Get the corresponding list of questions from the dataset
-            questions = dataset[i]["answers"]
-            if isinstance(questions, list):
-                label_str = "|||".join(questions)
+            answers = dataset[i]["answers"]
+            if isinstance(answers, list):
+                label_str = "|||".join(answers)
             else:
-                label_str = str(questions)
+                label_str = str(answers)
 
             # Add the new label to the data
             data["label"] = label_str
+
+
+            if "prediction" in data:
+                data["predict"] = data.pop("prediction")
 
             # Write the updated line to the output file
             outfile.write(json.dumps(data, ensure_ascii=False) + "\n")
@@ -38,9 +42,12 @@ def add_labels_to_jsonl(input_path, output_path, dataset_name, split, cache_dir)
 if __name__ == "__main__":
     # Example usage
     add_labels_to_jsonl(
-        input_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa/qwen2.5-3b-instruct-new/web_qa_predictions.jsonl",
-        output_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa/qwen2.5-3b-instruct-new/web_qa_predictions_with_labels.jsonl",
+        input_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa_asr/qwen2.5-7b-instruct-VA_sft-new_llamafactory_cli/generated_predictions.jsonl",
+        output_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa_asr/qwen2.5-7b-instruct-VA_sft-new_llamafactory_cli/generated_predictions_with_labels.jsonl",
         dataset_name="TwinkStart/speech-web-questions",
         split="test",
         cache_dir="/home/wenxi/mydisk/data/standard_qa_eval/web_qa"
     )
+
+# llama-questions speech-triavia-qa speech-web-questions
+# llama_qa, trivia_qa, web_qa
