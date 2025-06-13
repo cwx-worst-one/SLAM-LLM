@@ -11,13 +11,13 @@ num_gpus_per_node=$(( $(echo ${CUDA_VISIBLE_DEVICES} | tr -cd ',' | wc -c) + 1 )
 num_nodes=1
 num_gpus=$(( num_gpus_per_node * num_nodes ))
 
-whisper_size=large-v3                  # tiny base small medium large-v3
+whisper_size=small                  # tiny base small medium large-v3
 speech_encoder_path="/valleblob/v-wenxichen/models/whisper/${whisper_size}.pt"   # different whisper size
 llm_path="/valleblob/v-wenxichen/models/qwen/qwen2.5-7b-instruct"  # Qwen 2/2.5/3
 llm_name=qwen2.5-7b-instruct
 
-encoder_dim=1280                     # 384 512 768 1024 1280
-mel_size=128                         # 80 128 ( only whisper-large-v3 supports 128 )
+encoder_dim=768                     # 384 512 768 1024 1280
+mel_size=80                         # 80 128 ( only whisper-large-v3 supports 128 )
 llm_dim=3584                        # 896 1536 2048 3584  -> Qwen2.5 0.5B 1.5B 3B 7B
                                     # 2560 4096 -> Qwen3 4B 8B
 
@@ -33,10 +33,10 @@ do_layershift=false                 # if false, tokens in each layers use the sa
 
 # dataset settings
 manifest_format=parquet             # parquet or jsonl
-train_data_path=/valleblob/v-wenxichen/data/s2s/VoiceAssistant-400K-v2-arrow-test-split-2percent
-val_data_path=/valleblob/v-wenxichen/data/s2s/VoiceAssistant-400K-v2-arrow-test-split-1percent
-load_from_cache_file=false           # set to true if you have already generated the cache file, otherwise set to false
-multitask_prompt_path=/home/wenxi/SLAM-LLM/examples/s2s/conf/multitask_prompt.jsonl
+train_data_path=/home/wenxi/mydisk/data/VoiceAssistant-400K-v2-arrow
+val_data_path=/home/wenxi/mydisk/data/VoiceAssistant-400K-v2-arrow
+load_from_cache_file=true           # set to true if you have already generated the cache file, otherwise set to false
+cache_dir=/home/wenxi/mydisk/data/VA-cache  # you could set the cache_dir if load_from_cache_file=true and the cache file is not in the default cache_dir
 
 # training settings
 modeling_paradigm=interleaved
@@ -52,10 +52,6 @@ warmup_steps=1000
 total_steps=100000
 gradient_accumulation_steps=1
 train_audio_embed_only=true
-batching_strategy=grouped
-task_group_path_train=/valleblob/v-wenxichen/data/s2s/json/task_type/test-split-2percent_fast.json
-task_group_path_val=/valleblob/v-wenxichen/data/s2s/json/task_type/test-split-1percent_fast.json
-find_unused_parameters=true
 
 # PEFT settings
 use_peft=false
@@ -64,7 +60,7 @@ lora_alpha=$((lora_r * 2))
 
 # validation settings
 validation_interval=3000
-split_size=0
+split_size=0.01
 
 
 exp_name="gpu${num_gpus}-btz${batch_size_training}-lr${lr}-interleave_text${interleaved_text_token_num}_audio${interleaved_audio_token_num}-${llm_name}-s2t"
@@ -115,17 +111,12 @@ hydra.run.dir=$output_dir \
 ++dataset_config.modeling_paradigm=$modeling_paradigm \
 ++dataset_config.interleaved_text_token_num=$interleaved_text_token_num \
 ++dataset_config.interleaved_audio_token_num=$interleaved_audio_token_num \
-++dataset_config.cache_dir_train=$cache_dir_train \
-++dataset_config.cache_dir_val=$cache_dir_val \
-++dataset_config.multitask_prompt_path=$multitask_prompt_path \
+++dataset_config.cache_dir=$cache_dir \
 ++train_config.model_name=s2s \
 ++train_config.num_epochs=$num_epochs \
 ++train_config.freeze_encoder=true \
 ++train_config.freeze_llm=$freeze_llm \
-++train_config.batching_strategy=$batching_strategy \
-++train_config.task_group_path_train=$task_group_path_train \
-++train_config.task_group_path_val=$task_group_path_val \
-++train_config.find_unused_parameters=$find_unused_parameters \
+++train_config.batching_strategy=custom \
 ++train_config.warmup_steps=$warmup_steps \
 ++train_config.total_steps=$total_steps \
 ++train_config.lr=$lr \
@@ -170,7 +161,6 @@ if [[ $CUDA_VISIBLE_DEVICES != *","* ]]; then
             $hydra_args
     fi
 else
-    # python -m debugpy --wait-for-client --listen 5678 -m torch.distributed.run \
     torchrun \
         --nnodes $num_nodes \
         --nproc_per_node $num_gpus_per_node \
@@ -187,4 +177,4 @@ fi
 # --node_rank=$node_rank \
 # --master_addr=$master_addr \
 
-# bash examples/s2s/scripts/finetune/finetune_s2s_interleave_s2t_mix_t2t.sh
+# bash examples/s2s/scripts/finetune/interleave/finetune_s2s_interleave_s2t.sh

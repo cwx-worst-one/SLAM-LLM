@@ -1,5 +1,5 @@
 # SLAM-Omni
-[![Python 3.10](https://img.shields.io/badge/Python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/) [![arXiv](https://img.shields.io/badge/arXiv-2412.15649-B31B1B.svg)](https://arxiv.org/abs/2412.15649) [![GitHub Demo Page](https://img.shields.io/badge/Github-Demo%20Page-orange.svg)](https://slam-omni.github.io/) [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10](https://img.shields.io/badge/Python-3.10-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3100/) [![arXiv](https://img.shields.io/badge/arXiv-2412.15649-B31B1B.svg?logo=arxiv)](https://arxiv.org/abs/2412.15649) [![GitHub Demo Page](https://img.shields.io/badge/Github-Demo%20Page-orange.svg?logo=github)](https://slam-omni.github.io/) [![🤗 SLAM-Omni on HuggingFace](https://img.shields.io/badge/HuggingFace-SLAM--Omni-yellow?logo=huggingface)](https://huggingface.co/collections/worstchan/slam-omni-68175a74c075e49c1b339ac7) [![License](https://img.shields.io/badge/License-MIT-green.svg?logo=opensourceinitiative)](https://opensource.org/licenses/MIT)
 
 (*Reproduction of the [paper](https://arxiv.org/abs/2412.15649) SLAM-Omni: Timbre-Controllable Voice Interaction System with Single-Stage Training.*)
 
@@ -115,7 +115,9 @@ bash ./examples/s2s/scripts/inference/mini-omni/inference_s2s_batch.sh
 ```
 
 ## TODO
-- [ ] Add evaluation scripts.
+- [x] Add evaluation scripts.
+- [x] Add implementation of interleaved paradigm.
+- [x] Add support for multi-task training.
 - [ ] Add streaming inference scripts for SLAM-Omni.
 
 
