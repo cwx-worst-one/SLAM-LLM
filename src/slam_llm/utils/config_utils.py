@@ -15,9 +15,10 @@ from transformers import default_data_collator
 from transformers.data import DataCollatorForSeq2Seq
 
 # from llama_recipes.configs import datasets, lora_config, llama_adapter_config, prefix_config, train_config
-from slam_llm.data.sampler import LengthBasedBatchSampler, DistributedLengthBasedBatchSampler
+from slam_llm.data.sampler import LengthBasedBatchSampler, DistributedLengthBasedBatchSampler, GroupedBatchSampler, DistributedGroupedBatchSampler
 
 from omegaconf import OmegaConf
+import os
 
 import logging
 logger = logging.getLogger(__name__)
@@ -96,7 +97,32 @@ def get_dataloader_kwargs(train_config, dataset, tokenizer, mode):
             kwargs["batch_size"] = None
             kwargs["drop_last"] = False
             kwargs["collate_fn"] = dataset.collator 
-            logger.info(f"Using batching strategy: {train_config.batching_strategy}")
+            if int(os.environ.get("RANK", "0")) == 0:
+                logger.info(f"Using batching strategy: {train_config.batching_strategy}")
+        elif train_config.batching_strategy == "grouped":
+            task_group_path_train = train_config.get("task_group_path_train", None)
+            task_group_path_val = train_config.get("task_group_path_val", None)
+            task_group_path_final = task_group_path_train if mode == "train" else task_group_path_val
+            if train_config.enable_fsdp or train_config.enable_ddp or train_config.enable_deepspeed:
+                kwargs["batch_sampler"] = DistributedGroupedBatchSampler(
+                    dataset, 
+                    batch_size=batch_size,
+                    rank=dist.get_rank(),
+                    num_replicas=dist.get_world_size(), 
+                    shuffle=(mode=="train"),
+                    task_group_path=task_group_path_final
+                )
+            else:
+                kwargs["batch_sampler"] = GroupedBatchSampler(
+                    dataset, 
+                    batch_size=batch_size, 
+                    drop_last=True, 
+                    shuffle=(mode=="train"),
+                    task_group_path=task_group_path_final
+                )
+            kwargs["collate_fn"] = dataset.collator
+            if int(os.environ.get("RANK", "0")) == 0:
+                logger.info(f"Using batching strategy: {train_config.batching_strategy}")
         else:
             # raise ValueError(f"Unknown batching strategy: {train_config.batching_strategy}")
             if train_config.enable_fsdp or train_config.enable_ddp or train_config.enable_deepspeed:
@@ -109,6 +135,7 @@ def get_dataloader_kwargs(train_config, dataset, tokenizer, mode):
             kwargs["batch_size"] = batch_size
             kwargs["drop_last"] = True
             kwargs["collate_fn"] = dataset.collator
-            logger.info(f"Using batching strategy: {train_config.batching_strategy}")
+            if int(os.environ.get("RANK", "0")) == 0:
+                logger.info(f"Using batching strategy: {train_config.batching_strategy}")
 
         return kwargs

@@ -79,7 +79,7 @@ fi
 # -m debugpy --listen 5678 --wait-for-client
 python $code_dir/inference_s2s.py \
         --config-path "conf" \
-        --config-name "prompt.yaml" \
+        --config-name "prompt_${task_type}.yaml" \
         hydra.run.dir=$ckpt_path \
         ++model_config.llm_name=$llm_name \
         ++model_config.llm_path=$llm_path \
@@ -141,4 +141,4 @@ python $code_dir/inference_s2s.py \
         ++speech_sample_rate=$speech_sample_rate \
         ++audio_prompt_path=$audio_prompt_path
 
-# bash ./examples/s2s/scripts/inference/inference_s2s_online_interleave_s2t.sh
+# bash ./examples/s2s/scripts/inference/interleave/inference_s2s_online_interleave_s2t.sh

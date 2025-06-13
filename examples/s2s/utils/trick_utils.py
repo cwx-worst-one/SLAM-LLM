@@ -30,9 +30,16 @@ def partial_freeze_weights(model, original_vocabsize, total_vocabsize):
         # Register the hook on the weight tensor
         param.register_hook(zero_out_gradient)
 
+    if hasattr(model.llm.model, "model") and hasattr(model.llm.model.model, "embed_tokens"):
+        embed_tokens_module = model.llm.model.model.embed_tokens
+    elif hasattr(model.llm.model, "embed_tokens"):
+        embed_tokens_module = model.llm.model.embed_tokens
+    else:
+        raise AttributeError("Cannot find embed_tokens in model.llm.model")
+
     # For non-tied embedding layers, both the two embedding layers need to be hooked
-    if model.llm.lm_head.weight.data_ptr() != model.llm.model.model.embed_tokens.weight.data_ptr():
-        for param in model.llm.model.model.embed_tokens.parameters():
+    if model.llm.lm_head.weight.data_ptr() != embed_tokens_module.weight.data_ptr():
+        for param in embed_tokens_module.parameters():
             std_dev = (2.0 / param.size(1)) ** 0.5
             param[original_vocabsize:total_vocabsize] = (
                 torch.randn((trainable_range[1] - trainable_range[0], param.size(1))) * std_dev

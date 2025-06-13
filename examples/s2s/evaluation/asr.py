@@ -41,6 +41,7 @@ def initialize_asr(model_directory: str):
     )
     return asr_pipeline
 
+
 def transcribe_audio_files(asr_pipe, input_directory: str, output_file: str):
     """
     Process all audio files in the input_directory using the ASR pipeline and write transcriptions to the output file.
@@ -66,6 +67,7 @@ def transcribe_audio_files(asr_pipe, input_directory: str, output_file: str):
                 # Write an empty transcription if the audio file does not exist
                 f.write(f"{file_name}\t\n")
 
+
 def setup_logging():
     """
     Configures logging with a standard format.
@@ -75,6 +77,7 @@ def setup_logging():
         format="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+
 
 def parse_args():
     """
@@ -91,6 +94,7 @@ def parse_args():
     parser.add_argument("--model_dir", type=str, required=True,
                         help="Directory of the pre-trained Whisper model (e.g., whisper-large-v3)")
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
@@ -112,6 +116,7 @@ def main():
     transcribe_audio_files(asr_pipe, args.input_dir, output_file)
 
     logging.info("ASR transcription process completed.")
+
 
 if __name__ == "__main__":
     main()

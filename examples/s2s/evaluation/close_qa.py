@@ -2,54 +2,45 @@ import argparse
 import string
 import json
 import re
-from num2words import num2words
 import os
+from whisper.normalizers import EnglishTextNormalizer
+from tqdm import tqdm
 
-def normalize_text(s: str) -> str:
-    """Lowercase, remove punctuation, articles, extra whitespace, and special tokens."""
-    def lower(text):
-        return text.lower()
 
-    def convert_numbers(text):
-        return re.sub(r'\b\d+\b', lambda m: num2words(int(m.group())), text)
-    
-    def remove_special_tokens(text):
-        return re.sub(r'<\|.*?\|>', '', text)
+PUNCTUATION_RE = re.compile(f"[{re.escape(string.punctuation)}]")
+ARTICLES_RE = re.compile(r"\b(a|an|the|and)\b", re.IGNORECASE)
+SPECIAL_TOKEN_RE = re.compile(r"<\|.*?\|>")
+WORD_BOUNDARY = r"\b{}\b"
+NORMALIZER = EnglishTextNormalizer()
 
-    def remove_punc(text):
-        return re.sub(r'[' + re.escape(string.punctuation) + ']', ' ', text)
+def normalize_text(text: str) -> str:
+    """
+    Apply lowercasing, remove special tokens, punctuation, articles, collapse whitespace, then Whisper normalize.
+    """
+    text = text.lower()
+    text = SPECIAL_TOKEN_RE.sub("", text)
+    text = PUNCTUATION_RE.sub(" ", text)
+    text = ARTICLES_RE.sub(" ", text)
+    text = " ".join(text.split())
+    return NORMALIZER(text)
 
-    def remove_articles(text):
-        return re.sub(r'\b(a|an|the|and)\b', ' ', text)
-
-    def white_space_fix(text):
-        return ' '.join(text.split())
-
-    s = lower(s)
-    s = convert_numbers(s)
-    s = remove_special_tokens(s)
-    s = remove_punc(s)
-    s = remove_articles(s)
-    s = white_space_fix(s)
-    return s
 
 def exact_match(pred: str, gt: str) -> bool:
-    """Check if normalized prediction exactly matches the ground truth."""
+    """Return True if normalized prediction exactly equals normalized ground truth."""
     return normalize_text(pred) == normalize_text(gt)
 
-def exist_match(pred: str, gt: str) -> bool:
-    """Check if normalized ground truth is contained within normalized prediction."""
-    pred_norm = normalize_text(pred)
-    # gt_norm = normalize_text(gt)
-    gt_parts = [normalize_text(part.strip()) for part in gt.split(',')]
 
-    for part in gt_parts:
-        pattern = r'\b' + re.escape(part) + r'\b'
-        if not re.search(pattern, pred_norm):
+def exist_match(pred: str, gt: str) -> bool:
+    """Return True if each comma-separated normalized part of gt appears in normalized pred as a whole word."""
+    pred_norm = normalize_text(pred)
+    parts = [normalize_text(p.strip()) for p in gt.split(",") if p.strip()]
+    if not parts or (len(parts) == 1 and parts[0] == ""):
+        return False
+    for part in parts:
+        if not re.search(WORD_BOUNDARY.format(re.escape(part)), pred_norm):
             return False
     return True
-    # return all(part in pred_norm for part in gt_parts)
-    # return gt_norm in pred_norm
+
 
 def read_tsv(path: str) -> dict:
     """Read TSV file into a dictionary: {key: value}"""
@@ -62,6 +53,7 @@ def read_tsv(path: str) -> dict:
             key, val = parts
             data[key] = val
     return data
+
 
 def read_jsonl(path: str) -> tuple:
     """
@@ -80,10 +72,10 @@ def read_jsonl(path: str) -> tuple:
                 print(f"[Error] Failed to parse line {i}: {e}")
     return preds, gts
 
+
 def evaluate(pred_file: str, gt_file: str, use_exist_match: bool = False, file_format: str = "tsv", show_mixmatch: bool = False):
     if file_format == "tsv":
-        preds = read_tsv(pred_file)
-        gts = read_tsv(gt_file)
+        preds, gts = read_tsv(pred_file), read_tsv(gt_file)
     elif file_format == "jsonl":
         preds, gts = read_jsonl(pred_file)
     else:
@@ -93,7 +85,7 @@ def evaluate(pred_file: str, gt_file: str, use_exist_match: bool = False, file_f
     correct = 0
     mismatches = []
 
-    for key in gts:
+    for key in tqdm(gts, desc="Rule-based Evaluation"):
         if key not in preds:
             print(f"[Warning] Missing prediction for key: {key}")
             continue
@@ -118,12 +110,15 @@ def evaluate(pred_file: str, gt_file: str, use_exist_match: bool = False, file_f
     print(f"Accuracy: {accuracy:.2%}")
     if mismatches and show_mixmatch:
         pred_file_dir = os.path.dirname(pred_file)
-        mismatch_file = os.path.join(pred_file_dir, "mismatch_examples.txt")
+        mismatch_file = os.path.join(pred_file_dir, "mismatch_examples_new.txt")
         with open(mismatch_file, 'w', encoding='utf-8') as f:
             f.write(f"[Examples of Incorrect Predictions] ({len(mismatches)} shown)\n")
             for key, gt, pred in mismatches:
+                gt = gt.strip()
+                pred = pred.strip()
                 f.write(f"{key}\n  GTs : {gt}\n  Pred: {pred}\n\n")
-        print(f"\n[Examples of Incorrect Predictions written to {mismatch_file}]")
+        print(f"Mismatches saved to {mismatch_file}")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate model predictions using exact or existence match.")
@@ -135,6 +130,7 @@ def main():
 
     args = parser.parse_args()
     evaluate(args.pred, args.gt, use_exist_match=args.exist, file_format=args.format, show_mixmatch=args.show_mixmatch)
+
 
 if __name__ == "__main__":
     main()

@@ -199,7 +199,7 @@ def train(
             total_loss = 0.0
             total_acc = 0.0
             if train_config.batching_strategy != "dynamic":
-                total_length = len(train_dataloader)//gradient_accumulation_steps
+                total_length = len(train_dataloader) // gradient_accumulation_steps
                 pbar = tqdm(colour="blue", desc=f"Training Epoch: {epoch+1}", total=total_length, dynamic_ncols=True)
             else:
                 pbar = tqdm(colour="blue", desc=f"Training Epoch: {epoch+1}", dynamic_ncols=True)
@@ -222,10 +222,11 @@ def train(
                 acc = rest[0] if rest else -1
                 loss = outputs.loss
 
-                loss = loss / gradient_accumulation_steps
-                acc = acc / gradient_accumulation_steps
+                # loss = loss / gradient_accumulation_steps    # NOTE: This is not needed in deepspeed since it handles gradient accumulation internally
+                # acc = acc / gradient_accumulation_steps
 
-                if log_config.use_wandb and step % log_config.log_interval == 0:
+                # if log_config.use_wandb and step % log_config.log_interval == 0:
+                if log_config.use_wandb and (step // gradient_accumulation_steps) % log_config.log_interval == 0:
                     if train_config.enable_fsdp or train_config.enable_ddp:
                         if rank == 0:
                             wandb.log(
@@ -233,16 +234,17 @@ def train(
                                     "train_inner/train_inner_loss": loss,
                                     "train_inner/train_inner_accuracy": acc,
                                 },
-                                step=(epoch * total_length + step) if train_config.batching_strategy != "dynamic" else step + 1,
+                                step=(epoch * total_length + step // gradient_accumulation_steps) if train_config.batching_strategy != "dynamic" else step + 1,
                             )
                     else:
-                        wandb.log(
-                            {
-                                "train_inner/train_inner_loss": loss,
-                                "train_inner/train_inner_accuracy": acc,
-                            },
-                            step=(epoch * total_length + step) if train_config.batching_strategy != "dynamic" else step + 1,
-                        )
+                        if rank == 0:
+                            wandb.log(
+                                {
+                                    "train_inner/train_inner_loss": loss,
+                                    "train_inner/train_inner_accuracy": acc,
+                                },
+                                step=(epoch * total_length + step // gradient_accumulation_steps) if train_config.batching_strategy != "dynamic" else step + 1,
+                            )
 
                 total_loss += loss.detach().float()
                 total_acc += acc
@@ -358,13 +360,14 @@ def train(
                         }
                     )
             else:
-                wandb.log(
-                    {
-                        "train/train_perplexity": train_perplexity,
-                        "train/train_epoch_loss": train_epoch_loss,
-                        "train/train_epoch_acc": train_epoch_acc,
-                    }
-                )
+                if rank == 0:
+                    wandb.log(
+                        {
+                            "train/train_perplexity": train_perplexity,
+                            "train/train_epoch_loss": train_epoch_loss,
+                            "train/train_epoch_acc": train_epoch_acc,
+                        }
+                    )
 
         if rank == 0:
             logger.info(

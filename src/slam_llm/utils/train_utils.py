@@ -88,7 +88,7 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
     best_val_acc = 0.0
     for epoch in range(train_config.num_epochs):
         epoch_start_time = time.perf_counter()
-        with MemoryTrace() as memtrace,Join([model,optimizer]):  # track the memory usage
+        with MemoryTrace() as memtrace:  # track the memory usage
             model.train()
             total_loss = 0.0
             total_acc = 0.0
@@ -114,14 +114,14 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                 acc = rest[0] if rest else -1
                 loss = outputs.loss
 
-                # loss = loss / gradient_accumulation_steps
-                # acc = acc / gradient_accumulation_steps
+                loss = loss / gradient_accumulation_steps
+                acc = acc / gradient_accumulation_steps
 
                 # if log_config.use_wandb and step % log_config.log_interval == 0:
                 if log_config.use_wandb and (step // gradient_accumulation_steps) % log_config.log_interval == 0:
                     if train_config.enable_fsdp or train_config.enable_ddp:
-                        if rank==0:
-                            wandb.log({"train_inner/train_inner_loss":loss, "train_inner/train_inner_accuracy":acc}, step=(epoch * total_length + step // gradient_accumulation_steps) if train_config.batching_strategy != "dynamic" else step + 1)
+                        if rank == 0:
+                            wandb.log({"train_inner/train_inner_loss": loss, "train_inner/train_inner_accuracy":acc}, step=(epoch * total_length + step // gradient_accumulation_steps) if train_config.batching_strategy != "dynamic" else step + 1)
                     else:
                         wandb.log({"train_inner/train_inner_loss":loss, "train_inner/train_inner_accuracy":acc}, step=(epoch * total_length + step // gradient_accumulation_steps) if train_config.batching_strategy != "dynamic" else step + 1)
                 total_loss += loss.detach().float()

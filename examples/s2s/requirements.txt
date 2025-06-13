@@ -21,3 +21,4 @@ torchaudio==2.3.0
 wget==3.2
 num2words==0.5.14
 torchvision==0.18.0
+deepspeed==0.16.7

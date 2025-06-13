@@ -121,8 +121,11 @@ class TrainConfig:
     run_validation:bool = True
     batch_size_training:int = 4
     batching_strategy:str = field(default="packing", metadata={
-        "help":"alternative: padding"
+        "help":"alternative: padding, dynamic, grouped, packing"
     }) #
+    task_group_path_train: Optional[str] = None
+    task_group_path_val: Optional[str] = None
+    find_unused_parameters:bool = False
     context_length:int = 4096
     gradient_accumulation_steps:int = 1
     num_epochs:int = 3
@@ -201,6 +204,8 @@ class DataConfig:
     vocab_config: VocabConfig = field(default_factory=VocabConfig)
     load_from_cache_file: bool = False
     cache_dir: Optional[str] = None
+    cache_dir_train: Optional[str] = None
+    cache_dir_val: Optional[str] = None
     task_type: str = "s2s"
     upsample_text_tokens: bool = False
     upsampling_factor: int = 1
@@ -213,6 +218,7 @@ class DataConfig:
     })
     interleaved_text_token_num: int = 12
     interleaved_audio_token_num: int = 36
+    multitask_prompt_path: Optional[str] = None
 
 @dataclass
 class RAGConfig:
