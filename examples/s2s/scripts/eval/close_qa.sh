@@ -1,8 +1,8 @@
 #!/bin/bash
 
 DATASET=web_qa # llama_qa trivia_qa web_qa
-DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET}/gpu4-btz1-lr1e-4-Qwen2.5-7b-Instruct-lora_r32-audio_embed_only-s2t-whisper_large-v3-s2t_1.00-t2t_0.50
-# DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/web_qa_asr/qwen2.5-7b-instruct-VA_sft-new_llamafactory_cli/generated_predictions_with_labels.jsonl
+DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET}/Qwen2.5-7b-Instruct-lora_r32_alpha64-audio_embed_only-s2t-whisper_large-v3-qwen2.5-7b-instruct_enrich_new
+# DECODE_DIR=/home/wenxi/mydisk/exp/standard_qa_eval/web_qa/qwen2.5-7b-instruct-VA_qwen2.5-7b-instruct_refined_new_sft-llamafactory_cli/generated_predictions_with_labels.jsonl
 FORMAT=tsv    # tsv jsonl
 
 

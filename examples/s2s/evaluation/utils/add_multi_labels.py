@@ -42,8 +42,8 @@ def add_labels_to_jsonl(input_path, output_path, dataset_name, split, cache_dir)
 if __name__ == "__main__":
     # Example usage
     add_labels_to_jsonl(
-        input_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa_asr/qwen2.5-7b-instruct-VA_sft-new_llamafactory_cli/generated_predictions.jsonl",
-        output_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa_asr/qwen2.5-7b-instruct-VA_sft-new_llamafactory_cli/generated_predictions_with_labels.jsonl",
+        input_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa/qwen2.5-7b-instruct-VA_qwen2.5-7b-instruct_refined_new_sft-llamafactory_cli/generated_predictions.jsonl",
+        output_path="/home/wenxi/mydisk/exp/standard_qa_eval/web_qa/qwen2.5-7b-instruct-VA_qwen2.5-7b-instruct_refined_new_sft-llamafactory_cli/generated_predictions_with_labels.jsonl",
         dataset_name="TwinkStart/speech-web-questions",
         split="test",
         cache_dir="/home/wenxi/mydisk/data/standard_qa_eval/web_qa"

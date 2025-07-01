@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=3
+export CUDA_VISIBLE_DEVICES=2
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=1
 export LD_LIBRARY_PATH=/home/v-wenxichen/anaconda3/envs/slam/lib:$LD_LIBRARY_PATH
@@ -34,13 +34,14 @@ num_latency_tokens=0                # number of latency tokens (same as the numb
 do_layershift=false                 # if false, tokens in each layers use the same codebook, otherwise, use different codebooks
 
 
-ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-qwen2.5-7b-instruct-s2t_0.50-t2t_0.50-total_steps_120000-lora_r_32/s2s_epoch_4_step_1236
+ckpt_path=/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-qwen2.5-7b-instruct-s2t-qwen2.5-7b-instruct_enrich_new-total_steps120000-lora_r_32-ds_zero2/s2s_epoch_2_step_12797/global_step51000
+# peft_ckpt=/valleblob/v-wenxichen/exp/llamafactory/Qwen/qwen2.5-7b-instruct-lora-sft-VoiceAssistant
 
 # PEFT settings
 use_peft=true
 lora_r=32
 lora_alpha=$(($lora_r * 2))
-# lora_alpha=16
+# lora_alpha=48
 
 # jsonl dataset
 # manifest_format=jsonl
@@ -77,7 +78,7 @@ inference_online=false
 # audio_prompt_path=./examples/s2s/audio_prompt/zh/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 audio_prompt_path=./examples/s2s/audio_prompt/en/prompt_6.wav      # replace this with your own audio prompt path or our provided audio prompt path
 
-decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz1-lr1e-4-${llm_name}-lora_r${lora_r}-audio_embed_only-s2t-whisper_${whisper_size}-s2t_0.50-t2t_0.50
+decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/${llm_name}-lora_r${lora_r}_alpha${lora_alpha}-audio_embed_only-s2t-whisper_${whisper_size}-qwen2.5-7b-instruct_enrich_new
 # decode_log=/home/wenxi/mydisk/exp/standard_qa_eval/${DATASET_NAME}/gpu4-btz3-lr1e-4-interleave_text12_audio36-qwen2.5-7b-instruct-audio_embed_only-lora_rank32-s2t-new_eos_token-whisper-large-v3-lora_alpha$lora_alpha
 
 # -m debugpy --listen 5678 --wait-for-client
@@ -147,6 +148,7 @@ python $code_dir/inference_s2s.py \
         ++output_text_only=$output_text_only \
         ++inference_online=$inference_online \
         ++speech_sample_rate=$speech_sample_rate \
-        ++audio_prompt_path=$audio_prompt_path
+        ++audio_prompt_path=$audio_prompt_path  \
+        # ++peft_ckpt=$peft_ckpt \
 
 # bash ./examples/s2s/scripts/inference/interleave/inference_s2s_batch_interleave.sh
