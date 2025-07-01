@@ -31,7 +31,7 @@ class RunConfig:
     ckpt_path: str = field(
         default="output/model.pt", metadata={"help": "The path to model backbone checkpoint"}
     )
-    peft_ckpt_path: Optional[str] = field(
+    peft_ckpt: Optional[str] = field(
         default=None,
         metadata={
             "help": "The path to peft checkpoint",

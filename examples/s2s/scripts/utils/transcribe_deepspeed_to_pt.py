@@ -1,6 +1,6 @@
 import torch
-in_path = "/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz4-lr1e-4-qwen2.5-7b-instruct-freeze_llm-s2t-deepspeed_zero0-total_steps150000/s2s_epoch_5_step_14392/global_step129000/mp_rank_00_model_states.pt"
-out_path = "/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz4-lr1e-4-qwen2.5-7b-instruct-freeze_llm-s2t-deepspeed_zero0-total_steps150000/s2s_epoch_5_step_14392/global_step129000"
+in_path = "/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-qwen2.5-7b-instruct-s2t-qwen2.5-7b-instruct_enrich_new-total_steps120000-lora_r_32-ds_zero2/s2s_epoch_2_step_12797/global_step51000/mp_rank_00_model_states.pt"
+out_path = "/valleblob/v-wenxichen/exp/s2s-interleave/gpu4-btz3-lr1e-4-qwen2.5-7b-instruct-s2t-qwen2.5-7b-instruct_enrich_new-total_steps120000-lora_r_32-ds_zero2/s2s_epoch_2_step_12797/global_step51000"
 weight_dict = torch.load(in_path)["module"]
 torch.save(weight_dict, f"{out_path}/model.pt")
 print("[Finish]")

@@ -51,8 +51,8 @@ def calculate_average_word_count(file_path, field_name='predict'):
 
 # Example usage
 if __name__ == "__main__":
-    input_path = "/home/wenxi/mydisk/exp/standard_qa_eval/web_qa_asr/qwen2.5-7b-instruct-VA_sft-new_llamafactory_cli/generated_predictions_with_labels.jsonl"
-    field = "predict"  # change this to your target field name  llama_qa, trivia_qa, web_qa
+    input_path = "/valleblob/v-wenxichen/data/s2s/json/voice_assistant.json"
+    field = "output"  # change this to your target field name  llama_qa, trivia_qa, web_qa
     avg_wc = calculate_average_word_count(input_path, field)
 
     if avg_wc is not None:
