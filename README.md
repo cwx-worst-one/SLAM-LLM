@@ -80,7 +80,7 @@ git checkout tags/v0.6.0
 pip install -e .
 cd ..
 pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
-git clone https://github.com/ddlBoJack/SLAM-LLM.git
+git clone https://github.com/cwx-worst-one/SLAM-LLM.git
 cd SLAM-LLM
 pip install  -e .
 ```
